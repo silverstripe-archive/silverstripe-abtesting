@@ -30,7 +30,7 @@ class ABTestPageExtension extends DataObjectDecorator {
 				else if (count($templates) == 1)
 					$this->owner->templates['index'] = array($variation->AlternateTemplate, "Page");
 
-				Debug::show("templates being overridden are " . print_r($this->owner->templates, true));
+//				Debug::show("templates being overridden are " . print_r($this->owner->templates, true));
 			}
 			else if ($variation && $variation->Presentation == "DynamicTemplate" && class_exists("DynamicTemplate")) {
 				$this->owner->DynamicTemplateID = $variation->DynamicTemplateID;

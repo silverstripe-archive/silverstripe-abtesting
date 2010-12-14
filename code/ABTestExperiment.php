@@ -31,6 +31,21 @@ class ABTestExperiment extends DataObject {
 		"Variations" => "ABTestVariation"
 	);
 
+	function getCMSFields() {
+		$fields = parent::getCMSFields();
+		$fields->removeByName('TestedPageID');
+		$fields->removeByName('ConversionPageID');
+		$fields->addFieldToTab(
+			"Root.Main",
+			new TreeDropdownField("TestedPageID", $this->fieldLabel('Tested Page'), 'SiteTree')
+		);
+		$fields->addFieldToTab(
+			"Root.Main",
+			new TreeDropdownField("ConversionPageID", $this->fieldLabel('Conversion Page'), 'SiteTree')
+			);
+		return $fields;
+	}
+
 	/**
 	 * Determine if the given page is subject to an active experiment.
 	 * @return Return the experiment (or the first) or null if there isn't one.
@@ -61,7 +76,7 @@ class ABTestExperiment extends DataObject {
 			$v = ABTestVariation::choose_random_variant($this);
 			Session::set("Experiment_{$this->ID}", $v);
 		}
-		Debug::show("Variant: $v");
+//		Debug::show("Variant: $v");
 	}
 
 	function getVariationValue() {
