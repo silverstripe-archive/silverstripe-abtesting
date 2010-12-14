@@ -31,4 +31,14 @@ class ABTestData extends DataObject {
 	static $has_one = array(
 		'Experiment' => 'ABTestExperiment',
 	);
+
+	static $searchable_fields = array(
+		'StateVariableValue',
+		'Assertiveness'
+	);
+
+	static $summary_fields = array(
+		'StateVariableValue',
+		'Assertiveness'
+	);
 }
