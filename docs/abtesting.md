@@ -33,6 +33,15 @@ The tested page displays it's normal contents. Each variation can be configured 
 * Using the dynamictemplate module - this allows you to have a template designed that you can upload to your site, and apply it to a page
   or a variation.
 
+To create an experiment, go to the AB Testing menu in the CMS, and do the following:
+
+* Add a new experiment
+* Give it a name
+* Provide a value for the State Variable Value. A recommended value is 'a' (without quotes)
+* Select the page you are testing
+* Select the conversion page
+* Make sure the status is set to 'suspended'
+* Save the experiment
 ### Variation Using Another Page
 
 ### Variation Using a Different Template
