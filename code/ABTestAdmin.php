@@ -24,7 +24,7 @@ class ABTestAdmin extends ModelAdmin {
 			//user_error('ModelAdmin::init(): Invalid Model class', E_USER_ERROR);
 		}
 
-		Requirements::customScript('<!--[if IE]><script language="javascript" type="text/javascript" src="abtesting/thirdparty/flot/excanvas.min.js"></script><![endif]-->');
+		Requirements::insertHeadTags('<!--[if IE]><script language="javascript" type="text/javascript" src="abtesting/thirdparty/flot/excanvas.min.js"></script><![endif]-->');
 		Requirements::javascript('abtesting/thirdparty/flot/jquery.flot.js');
 	}
 }
