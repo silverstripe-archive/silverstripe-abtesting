@@ -43,6 +43,10 @@ class ABTestExperiment extends DataObject {
 			"Root.Main",
 			new TreeDropdownField("ConversionPageID", $this->fieldLabel('Conversion Page'), 'SiteTree')
 			);
+		$fields->addFieldToTab(
+			"Root.ConversionReport",
+			new ExperimentConversionReportField("ConversionResult", "", $this->ID)
+			);
 		return $fields;
 	}
 
@@ -61,6 +65,18 @@ class ABTestExperiment extends DataObject {
 	function getVariation($stateVariable = null) {
 		if (!$stateVariable) $stateVariable = $this->getVariationValue();
 		return DataObject::get_one("ABTestVariation", "\"ExperimentID\"={$this->ID} and \"StateVariableValue\"='{$stateVariable}'");
+	}
+
+	/**
+	 * Returns all the variations and their title, as a map.
+	 * @returns Map		A map whose keys are the variation variable value, and whose value is the title of the variation.
+	 */
+	function getAllVariations() {
+		$result = array();
+		$result[$this->StateVariableValue] = "Test page default variation";
+		$vars = $this->Variations();
+		if ($vars) foreach ($vars as $v) $result[$v->StateVariableValue] = $v->Title;
+		return $result;
 	}
 
 	/**
@@ -129,5 +145,59 @@ class ABTestExperiment extends DataObject {
 		$data->WhenConverted = SS_Datetime::now();
 		$data->Assertiveness = $assertiveness;
 		$data->write();
+	}
+}
+
+/**
+ * A formfield that presents the results of an experiment. The $value on the constructor is the experiment ID.
+ */
+class ExperimentConversionReportField extends FormField {
+	function Field() {
+		$result = '<div id="chart-placeholder" style="width:800px;height:300px;float:left;"></div>';
+		$result .= '<div id="chart-legend" style="width:300px;height:300px;float:left;"></div>';
+
+		if (!$this->value) return $result;
+
+		$experiment = DataObject::get_by_id("ABTestExperiment", $this->value);
+		$variations = $experiment->getAllVariations();
+
+		$result .= '<script type="text/javascript">' . "\n";
+
+		// Generate a javascript array that contains the series
+		$result .= 'var series = [];';
+
+		foreach ($variations as $variation => $title) {
+			$vardata = DB::query("select DATE(Created) as DateCreated,count(ID) as CountRenders, sum(Assertiveness) as SumAssertiveness from ABTestData where StateVariableValue='$variation' and ExperimentID={$this->value} group by DAY(Created), StateVariableValue order by DATE(Created),StateVariableValue");
+			$series = array();
+			foreach ($vardata as $row) {
+				$series[] = array(strtotime($row['DateCreated']) * 1000, (($row['SumAssertiveness'] / 100) / $row['CountRenders']) * 100);
+			}
+			$jsondata = Convert::raw2json($series);
+			$result .= "series.push({data: $jsondata, label: '$variation: $title'});\n";
+		}
+
+		$result .= <<<EOT
+(function ($) {
+	$(function () {
+	    $.plot($("#chart-placeholder"),
+			series,
+			{
+				series: {
+					lines: { show: true },
+					points: { show: true }
+				},
+				legend: {
+					show: true,
+					container: $("#chart-legend")
+				},
+				xaxis: { mode: "time" },
+				grid: { hoverable: true }
+			}
+		);
+	});
+})(jQuery);
+</script>
+EOT;
+		return $result;
 	}
 }
