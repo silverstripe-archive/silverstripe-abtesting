@@ -26,5 +26,6 @@ class ABTestAdmin extends ModelAdmin {
 
 		Requirements::insertHeadTags('<!--[if IE]><script language="javascript" type="text/javascript" src="abtesting/thirdparty/flot/excanvas.min.js"></script><![endif]-->');
 		Requirements::javascript('abtesting/thirdparty/flot/jquery.flot.js');
+		Requirements::css("abtesting/css/abtesting.css");
 	}
 }

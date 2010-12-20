@@ -1,0 +1,12 @@
+#Root_Reports .middleColumn {
+	background: none;
+}
+
+#Root_Reports label {
+	font-size: 14pt;
+	font-weight: bold;
+}
+
+#RenderRaw label, #ConversionRaw label {
+	margin-top: 20px;
+}

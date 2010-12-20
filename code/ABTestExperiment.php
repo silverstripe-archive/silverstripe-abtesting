@@ -44,8 +44,16 @@ class ABTestExperiment extends DataObject {
 			new TreeDropdownField("ConversionPageID", $this->fieldLabel('Conversion Page'), 'SiteTree')
 			);
 		$fields->addFieldToTab(
-			"Root.ConversionReport",
-			new ExperimentConversionReportField("ConversionResult", "", $this->ID)
+			"Root.Reports",
+			new ExperimentReportField("ConversionRate", "Conversion Rate", $this->ID)
+			);
+		$fields->addFieldToTab(
+			"Root.Reports",
+			new ExperimentReportField("ConversionRaw", "Conversion Raw Clicks", $this->ID)
+			);
+		$fields->addFieldToTab(
+			"Root.Reports",
+			new ExperimentReportField("RenderRaw", "Test Page Raw Hits", $this->ID)
 			);
 		return $fields;
 	}
@@ -151,10 +159,10 @@ class ABTestExperiment extends DataObject {
 /**
  * A formfield that presents the results of an experiment. The $value on the constructor is the experiment ID.
  */
-class ExperimentConversionReportField extends FormField {
+class ExperimentReportField extends FormField {
 	function Field() {
-		$result = '<div id="chart-placeholder" style="width:800px;height:300px;float:left;"></div>';
-		$result .= '<div id="chart-legend" style="width:300px;height:300px;float:left;"></div>';
+		$result = '<div id="chart-placeholder-' . $this->Name() . '" style="width:800px;height:300px;float:left;"></div>';
+		$result .= '<div id="chart-legend-' . $this->Name() . '" style="width:300px;height:300px;float:left;"></div>';
 
 		if (!$this->value) return $result;
 
@@ -170,7 +178,17 @@ class ExperimentConversionReportField extends FormField {
 			$vardata = DB::query("select DATE(Created) as DateCreated,count(ID) as CountRenders, sum(Assertiveness) as SumAssertiveness from ABTestData where StateVariableValue='$variation' and ExperimentID={$this->value} group by DAY(Created), StateVariableValue order by DATE(Created),StateVariableValue");
 			$series = array();
 			foreach ($vardata as $row) {
-				$series[] = array(strtotime($row['DateCreated']) * 1000, (($row['SumAssertiveness'] / 100) / $row['CountRenders']) * 100);
+				switch ($this->Name()) {
+					case "ConversionRate":
+						$series[] = array(strtotime($row['DateCreated']) * 1000, (($row['SumAssertiveness'] / 100) / $row['CountRenders']) * 100);
+						break;
+					case "ConversionRaw":
+						$series[] = array(strtotime($row['DateCreated']) * 1000, $row['SumAssertiveness'] / 100);
+						break;
+					case "RenderRaw":
+						$series[] = array(strtotime($row['DateCreated']) * 1000, $row['CountRenders']);
+						break;
+				}
 			}
 			$jsondata = Convert::raw2json($series);
 			$result .= "series.push({data: $jsondata, label: '$variation: $title'});\n";
@@ -179,7 +197,7 @@ class ExperimentConversionReportField extends FormField {
 		$result .= <<<EOT
 (function ($) {
 	$(function () {
-	    $.plot($("#chart-placeholder"),
+	    $.plot($("#chart-placeholder-{$this->Name()}"),
 			series,
 			{
 				series: {
@@ -188,7 +206,7 @@ class ExperimentConversionReportField extends FormField {
 				},
 				legend: {
 					show: true,
-					container: $("#chart-legend")
+					container: $("#chart-legend-{$this->Name()}")
 				},
 				xaxis: { mode: "time" },
 				grid: { hoverable: true }
