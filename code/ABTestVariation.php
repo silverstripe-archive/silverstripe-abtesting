@@ -31,6 +31,10 @@ class ABTestVariation extends DataObject {
 
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
+		
+		// Remove the default dynamic template ID field, and add in a combo of the dynamic templates, provided the
+		// module is actually installed. Required because DynamicTemplateID is not a has_one, in case the dynamictemplate module
+		// is not installed.
 		$fields->removeByName('DynamicTemplateID');
 		if (class_exists('DynamicTemplate')) {
 			$ds = DataObject::get("DynamicTemplate", null, "Title");
@@ -48,6 +52,11 @@ class ABTestVariation extends DataObject {
 					$items
 				));
 		}
+
+		$fields->removeByName('AlternatePageID');
+		$fields->addFieldToTab(
+			"Root.Main",
+			new TreeDropdownField("AlternatePageID", "Alternate Page", 'SiteTree'));
 		return $fields;
 	}
 

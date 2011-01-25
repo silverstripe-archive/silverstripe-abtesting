@@ -33,6 +33,11 @@ class ABTestExperiment extends DataObject {
 
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
+
+		// These are removed for now, until the features they support are fully implemented.
+		$fields->removeByName('StateVariable');
+		$fields->removeByName('StateMechanism');
+
 		$fields->removeByName('TestedPageID');
 		$fields->removeByName('ConversionPageID');
 		$fields->addFieldToTab(
