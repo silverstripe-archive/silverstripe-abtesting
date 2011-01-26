@@ -113,15 +113,6 @@ class ABTestExperiment extends DataObject {
 	}
 
 	/**
-	 * If the selected variant uses an alternate page, then we redirect to that page.
-	 */
-	function redirectIfPageVariant() {
-		$variation = $this->getVariation();
-		if (!$variation) return;
-		if ($variation->Presentation == "AlternatePage") Director::redirect($variation->AlternatePage()->Link());
-	}
-
-	/**
 	 * Create a record that this page was hit.
 	 */
 	function hitTestedPage() {

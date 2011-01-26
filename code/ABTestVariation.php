@@ -12,7 +12,10 @@
 class ABTestVariation extends DataObject {
 	static $db = array(
 		"Title" => "Varchar",
-		"Presentation" => "Enum('AlternatePage,AlternateTemplate,DynamicTemplate', 'AlternatePage')",
+
+		// Determines which alternative presentation will be used. 'None' can be used if only alternate page
+		// is used. Otherwise we're changing the template system behaviour.
+		"Presentation" => "Enum('None,AlternateTemplate,DynamicTemplate', 'None')",
 		"StateVariableValue" => "Varchar",
 
 		// Name of an alternative Layout template, or a comma-separated list of all the templates, required
@@ -31,7 +34,9 @@ class ABTestVariation extends DataObject {
 
 	function getCMSFields() {
 		$fields = parent::getCMSFields();
-		
+
+		$presentationOptions = array("None" => "None", "AlternateTemplate" => "AlternateTemplate");
+
 		// Remove the default dynamic template ID field, and add in a combo of the dynamic templates, provided the
 		// module is actually installed. Required because DynamicTemplateID is not a has_one, in case the dynamictemplate module
 		// is not installed.
@@ -51,12 +56,23 @@ class ABTestVariation extends DataObject {
 					"Dynamic template",
 					$items
 				));
+
+			$presentationOptions["DynamicTemplate"] = "DynamicTemplate";
 		}
 
+		// Default makes this a simple combo, but we need it to be a tree.
 		$fields->removeByName('AlternatePageID');
 		$fields->addFieldToTab(
 			"Root.Main",
-			new TreeDropdownField("AlternatePageID", "Alternate Page", 'SiteTree'));
+			new TreeDropdownField("AlternatePageID", "Alternate Page", 'SiteTree'),
+			"AlternateTemplate"
+		);
+
+		// We need to regenerate presentation based on what options are actually available.
+		$fields->removeByName('Presentation');
+		$presentation = new DropdownField('Presentation', 'Presentation (how layout is varied)', $presentationOptions);
+		$fields->insertAfter($presentation, "AlternatePageID");
+
 		return $fields;
 	}
 

@@ -14,19 +14,16 @@ class ABTestPageExtension extends DataObjectDecorator {
 		if ($experiment = ABTestExperiment::get_experiment_for_test_page($this->owner)) {
 			$experiment->determineVariation();
 			$experiment->hitTestedPage();
-//			$experiment->redirectIfPageVariant();
 
 			$variation = $experiment->getVariation();
 
-			// @todo Separate the alternate page from the template selection in the model, so both
-			//  	 alternative content and template can be selected.
-
 			// If an alternate page is given, update the data of this page to the data of the
 			// alternate page, without writing back.
-			if ($variation && $variation->Presentation == "AlternatePage") {
+			if ($variation && $variation->AlternatePageID) {
 				$this->updatePageContentFromAlternate($variation);
 			}
 
+			// If the presentation option is set, take the necessary action to vary how the page is laid out.
 			if ($variation && $variation->Presentation == "AlternateTemplate") {
 				$templates = explode(",", $variation->AlternateTemplate);
 				if (count($templates) > 1)
@@ -56,7 +53,7 @@ class ABTestPageExtension extends DataObjectDecorator {
 		if (!$variation->AlternatePage()) return;
 		$map = array();
 		foreach ($variation->AlternatePage()->toMap() as $key => $value) {
-			if (strpos($key, '.') === false && $key != "URLSegment" && $key != "ID")
+			if (strpos($key, '.') === false && $key != "URLSegment" && $key != "ID" && $key != "ParentID")
 				$map[$key] = $value;
 		}
 		$this->owner->update($map);
