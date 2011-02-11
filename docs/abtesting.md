@@ -24,14 +24,16 @@ You also need to set up **variations** of the tested page. When users visit a te
 variations (the tested page is assumed to be one of the variations). Typically, the variations all have an action that the user takes, which leads to a
 **conversion page**. The module is measuring the proportion of users who take the action, for each variation.
 
-The tested page displays it's normal contents. Each variation can be configured to render data in one of the following ways:
+The tested page displays it's normal contents. Each variation needs to be configured with what content to display, and how that content is to be rendered, as follows:
 
-* Using an alternative page - this is used if the same template is to be displayed, but different content is going to be displayed.
-  This requires no coding changes, and can be set up completely in the CMS.
-* Using an alternative template - this is used to render the same content, but with a different template. This typically requires
-  design, coding and deployment for the new template.
-* Using the dynamictemplate module - this allows you to have a template designed that you can upload to your site, and apply it to a page
-  or a variation.
+* The variation can either use the content from the tested page, or can take content from an alternate page. Typically the alternate page is a child page that is hidden
+  from navigation. Alternate pages can be set up in the CMS without writing code, and without a deployment process.
+* The variation can choose a different way to render it's results:
+
+  * Using an alternative template - this is used to render the same content, but with a different template. This typically requires
+    design, coding and deployment for the new template.
+  * Using the dynamictemplate module - this allows you to have a template designed that you can upload to your site, and apply it to a page
+    or a variation.
 
 To create an experiment, go to the AB Testing menu in the CMS, and do the following:
 
@@ -42,6 +44,9 @@ To create an experiment, go to the AB Testing menu in the CMS, and do the follow
 * Select the conversion page
 * Make sure the status is set to 'suspended'
 * Save the experiment
+
+Generally the experiment should be suspended until it is completely set up, and then made active.
+
 ### Variation Using Another Page
 
 ### Variation Using a Different Template
