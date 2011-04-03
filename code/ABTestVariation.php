@@ -12,10 +12,10 @@
 class ABTestVariation extends DataObject {
 	static $db = array(
 		"Title" => "Varchar",
-
 		// Determines which alternative presentation will be used. 'None' can be used if only alternate page
 		// is used. Otherwise we're changing the template system behaviour.
 		"Presentation" => "Enum('None,AlternateTemplate,DynamicTemplate', 'None')",
+
 		"StateVariableValue" => "Varchar",
 
 		// Name of an alternative Layout template, or a comma-separated list of all the templates, required
@@ -28,7 +28,13 @@ class ABTestVariation extends DataObject {
 	);
 
 	static $has_one = array(
+		// experiment that this variation belongs to
 		"Experiment" => "ABTestExperiment",
+
+		// optional different conversion page for this variation
+		"ConversionPage" => "Page",
+
+		// if the variation uses alternate content, it comes from this page
 		"AlternatePage" => "SiteTree"
 	);
 
@@ -76,6 +82,10 @@ class ABTestVariation extends DataObject {
 		return $fields;
 	}
 
+//	function getCMSValidator() { 
+//		return new ABTestingVariationValidator(array('Title', 'Presentation', 'StateVariableValue')); 
+//	}
+
 	/*
 	 * Select one of the variants in the experiment, and return it's state variable.
 	 */
@@ -89,5 +99,37 @@ class ABTestVariation extends DataObject {
 			return $var->First()->StateVariableValue;
 		}
 	}
-	
 }
+
+/*
+class ABTestingVariationValidator extends RequiredFields {
+	function php($data) {
+		// start with basic required field checks
+		$valid = parent::php($data);
+
+		// @todo check for uniqueness of the state variable within the experiment. That is, look at all variations that
+		// exist, including this variation, and ensure the state variable isn't one of them.
+
+		// Check that required fields are present depending on presentation mode.
+		if ($data['Presentation'] == "AlternateTemplate" && (!isset($data["AlternateTemplate"]) || !$data["AlternateTemplate"])) {
+			$this->validationError(
+				$fieldName,
+				"Alternate Template is required if Presentation is 'Alternate Template'",
+				"required"
+			);
+			$valid = false;
+		}
+
+		if ($data['Presentation'] == "DynamicTemplate" && (!isset($data["DynamicTemplateID"]) || !$data["DynamicTemplateID"])) {
+			$this->validationError(
+				$fieldName,
+				"A dynamic template needs to be selected if Presentation is 'Dynamic Template'",
+				"required"
+			);
+			$valid = false;
+		}
+	
+		return $valid;
+	}
+}
+*/

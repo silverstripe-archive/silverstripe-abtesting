@@ -10,8 +10,20 @@
 class ABTestExperiment extends DataObject {
 	static $db = array(
 		"Title" => "Varchar",
+		"Comments" => "Text",
+
 		"Status" => "Enum('Suspended,Active,Complete', 'Suspended')",
-		"StateMechanism" => "Enum('Session,Cookie,QueryVariable','Session')",
+
+		"StartDate" => "SSDatetime",
+
+		"EndDate" => "SSDatetime",
+
+		"StateMechanism" => "Enum('Session,Cookie','Session')",
+//		"StateMechanism" => "Enum('Session,Cookie,QueryVariable','Session')",
+
+		// if StateMechanism is Cookie, this is the name of the cookie. If left blank, name is
+		// allocated automatically.
+		"CookieName" => "Varchar",
 
 		// Name of the state variable
 		"StateVariable" => "Varchar",
@@ -19,7 +31,16 @@ class ABTestExperiment extends DataObject {
 		// Value given to the state variable for the tested page. Must be unique with the values in the variations
 		"StateVariableValue" => "Varchar",
 
+		// If provided, and if the URL contains a query variable of this name, it can be used to determine
+		// the variation, instead of usual random assignment.
+		"VariationQueryVariable" => "Varchar",
+
 		"ConversionType" => "Enum('TargetPage','TargetPage')" // other options might include specifying an arbitrary target URL, which might need simple coding to register a hit.
+	);
+
+	static $defaults = array(
+		'StateVariable' => 'q',
+		'StateVariableValue' => 'a'
 	);
 
 	static $has_one = array(
@@ -40,6 +61,22 @@ class ABTestExperiment extends DataObject {
 
 		$fields->removeByName('TestedPageID');
 		$fields->removeByName('ConversionPageID');
+
+		$fields->removeByName('StartDate');
+		$fields->removeByName('EndDate');
+
+		$fields->removeByName('ConversionType');
+
+		$fields->addFieldToTab(
+			"Root.Main",
+			new ReadonlyField("StartDate", "Start date", $this->StartDate)
+		);
+
+		$fields->addFieldToTab(
+			"Root.Main",
+			new ReadonlyField("EndDate", "End date", $this->EndDate)
+		);
+
 		$fields->addFieldToTab(
 			"Root.Main",
 			new TreeDropdownField("TestedPageID", $this->fieldLabel('Tested Page'), 'SiteTree')
@@ -102,14 +139,42 @@ class ABTestExperiment extends DataObject {
 		// @todo If its not value, clear it.
 
 		if (!$v) {
-			$v = ABTestVariation::choose_random_variant($this);
-			Session::set("Experiment_{$this->ID}", $v);
+			if ($this->VariationQueryVariable && isset($_REQUEST[$this->VariationQueryVariable]))
+				$v = $_REQUEST[$this->VariationQueryVariable];
+			else
+				$v = ABTestVariation::choose_random_variant($this);
+			$this->setVariationValue($v);
 		}
 //		Debug::show("Variant: $v");
 	}
 
+	// set the value to where it is stored
+	function setVariationValue($value) {
+		switch ($this->StateMechanism) {
+			case 'Session':
+				Session::set("Experiment_{$this->ID}", $value);
+				break;
+			case 'Cookie':
+				$cookieLifetime = 30; // days
+				if (!$this->CookieName) $this->CookieName = "E_{$this->ID}";
+				setcookie($this->CookieName, $value, time()+60*60*24* $cookieLifetime);
+				break;
+		}
+
+	}
+
+	// get the value from where it is stored
 	function getVariationValue() {
-		return Session::get("Experiment_{$this->ID}");
+		switch ($this->StateMechanism) {
+			case 'Session':
+				return Session::get("Experiment_{$this->ID}");
+
+			case 'Cookie':
+				if (!$this->CookieName) $this->CookieName = "E_{$this->ID}";
+				if (isset($_COOKIE[$this->CookieName])) return $_COOKIE[$this->CookieName];
+				return null;
+		}
+		return null;
 	}
 
 	/**
@@ -132,8 +197,21 @@ class ABTestExperiment extends DataObject {
 	 * If the given page is the conversion page for any active experiments, update all of those pages.
 	 */
 	static function hit_conversion_pages($page) {
+		$expIDs = array();
 		$experiments = DataObject::get("ABTestExperiment", "\"ConversionPageID\"={$page->ID} and \"Status\"='Active'");
-		if ($experiments) foreach ($experiments as $experiment) $experiment->hitConversionPage();
+		if ($experiments) foreach ($experiments as $experiment) {
+			$experiment->hitConversionPage();
+			$expIDs[$experiment->ID] = 1;
+		}
+
+		// also, check if this page is a conversion page for any variation of an experiment, and hit them too. Make sure
+		// we don't double count for an experiment, which could happen if a variation specifies the same conversion
+		// as the experiment.
+		$variations = DataObject::get("ABTestVariation", "\"ConversionPageID\"={$page->ID}");
+		if ($variations) foreach ($variations as $var) {
+			$experiment = $var->Experiment();
+			if (!isset($expIDs[$experiment->ID]) && $experiment->Status == 'Active') $experiment->hitConversionPage();
+		}
 	}
 
 	/**
@@ -149,6 +227,13 @@ class ABTestExperiment extends DataObject {
 		$data->WhenConverted = SS_Datetime::now();
 		$data->Assertiveness = $assertiveness;
 		$data->write();
+	}
+
+	function onBeforeWrite() {
+		parent::onBeforeWrite();
+
+		if ($this->Status == 'Active' && !$this->StartDate) $this->StartDate = date('Y-m-d H:i:s');
+		if ($this->Status == 'Complete' && !$this->EndDate) $this->EndDate = date('Y-m-d H:i:s');
 	}
 }
 
