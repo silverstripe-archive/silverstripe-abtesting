@@ -70,4 +70,9 @@ If you want a variation to use a different template out of the site's theme, do 
 
 ## Variation Using a Dynamic Template
 
+tbc
+
 ## Reporting on an Experiment
+
+tbc
+
